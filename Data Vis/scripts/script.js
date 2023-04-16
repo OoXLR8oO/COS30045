@@ -10,6 +10,9 @@ function heatMap() {
     const width = 600 - margin.left - margin.right;
     const height = 400 - margin.top - margin.bottom;
 
+    const tooltip = d3.select("#tooltip3")
+        .style("opacity", 0);
+
     // Append the SVG element to the chart container
     const svg = d3.select("#heatmap")
         .append("svg")
@@ -65,22 +68,22 @@ function heatMap() {
             .style("fill", d => colorScale(d.fatalities))
             .on("mouseover", function (d) {
                 // Show a tooltip when hovering over a cell
-                const tooltip = d3.select("#heatmap")
-                    .append("div")
-                    .attr("class", "tooltip")
-                    .style("opacity", 0);
-
-                tooltip.html(`<strong>${d3.timeFormat("%B %Y")(d.date)}</strong><br>${d.fatalities}`)
-                    .style("left", `${d3.event.pageX}px`)
-                    .style("top", `${d3.event.pageY}px`)
+                tooltip.transition()
+                    .duration(100)
                     .style("opacity", 0.9);
+                tooltip.html(`Fatalities: ${d.fatalities}`)
+                    .style("left", `${d3.event.pageX + 10}px`)
+                    .style("top", `${d3.event.pageY - 30}px`);
             })
             .on("mouseout", function () {
                 // Hide the tooltip when no longer hovering over a cell
-                d3.select(".tooltip").remove();
+                tooltip.transition()
+                    .duration(100)
+                    .style("opacity", 0);
             });
     });
 }
+
 
 
 function scatterPlot() {
@@ -98,12 +101,6 @@ function scatterPlot() {
 
     const x = d3.scaleLinear().range([0, width]);
     const y = d3.scaleLinear().range([height, 0]);
-
-    const tooltip = d3
-        .select("body")
-        .append("div")
-        .attr("class", "tooltip")
-        .style("opacity", 0);
 
     Promise.all([
         d3.csv("conflict_data.csv", d => {
@@ -226,7 +223,7 @@ function barChart() {
             .attr("height", function (d) { return height - y(d.value); })
             .on("mouseover", function (event, d) {
                 // Show tooltip on mouseover
-                d3.select("#tooltip")
+                d3.select("#tooltip1")
                     .style("opacity", 1)
                     .html(d.province + "<br>" + d.key + ": " + d.value)
                     .style("left", (event.pageX + 10) + "px")
@@ -234,7 +231,7 @@ function barChart() {
             })
             .on("mouseout", function () {
                 // Hide tooltip on mouseout
-                d3.select("#tooltip")
+                d3.select("#tooltip1")
                     .style("opacity", 0);
             });
 
