@@ -180,7 +180,14 @@ function mapVisualization(idpType) {
             // Define the color scale
             var colorScale = d3.scaleQuantize()
                 .domain([0, d3.max(data, function (d) { return Math.max(d['Arrival IDPs'], d['Fled IDPs']); })])
-                .range(d3.schemeBlues[9]);
+            if(idpType == 'Arrival IDPs') {
+                colorScale.range(d3.schemeGreens[6]);
+            }
+            else   {
+                colorScale.range(d3.schemeReds[6]);
+            }
+                    
+                
 
             // Join the TopoJSON features with the data
             var provinces = topojson.feature(topology, topology.objects.AFGADM2gbOpen).features;
@@ -203,9 +210,19 @@ function mapVisualization(idpType) {
                     // Show tooltip on mouseover
                     d3.select("#tooltip1")
                         .style("opacity", 1)
-                        .html(d.properties.ADM1NameEnglish + "<br>IDPs: " + (d.properties.idps || 0))
+                        .html(d.properties.shapeName + "<br>IDPs: " + (d.properties.idps || 0))
                         .style("left", (event.pageX + 10) + "px")
                         .style("top", (event.pageY - 10) + "px");
+                })
+                .on("click", function(event, d) {
+                    // Draw the bar chart for the hovered province
+                    var provinceData = data.find(function (e) { return e.ADM1NameEnglish === d.properties.shapeName; });
+                    if (provinceData) {
+                        drawBarChart(provinceData);
+                    }
+                    else {
+                        d3.select("#barchart").html("");
+                    }
                 })
                 .on("mouseout", function () {
                     // Hide tooltip on mouseout
@@ -215,6 +232,58 @@ function mapVisualization(idpType) {
         });
     });
 }
+
+function drawBarChart(provinceData) {
+    // Remove any existing chart
+    d3.select("#barchart").html("");
+
+    // Set up the chart dimensions and margins
+    var margin = { top: 20, right: 20, bottom: 30, left: 40 },
+        width = 300 - margin.left - margin.right,
+        height = 200 - margin.top - margin.bottom;
+
+    // Create the SVG element and a group (g) element inside it with the proper translation
+    var svg = d3.select("#barchart")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    // Create scales for the bar chart
+    var xScale = d3.scaleBand()
+        .domain(["Arrival IDPs", "Fled IDPs"])
+        .range([0, width])
+        .padding(0.3);
+
+    var yScale = d3.scaleLinear()
+        .domain([0, Math.max(provinceData["Arrival IDPs"], provinceData["Fled IDPs"])])
+        .range([height, 0]);
+
+    // Draw the bars
+    svg.selectAll(".bar")
+        .data(["Arrival IDPs", "Fled IDPs"])
+        .enter().append("rect")
+        .attr("class", "bar")
+        .attr("x", function(d) { return xScale(d); })
+        .attr("y", function(d) { return yScale(provinceData[d]); })
+        .attr("width", xScale.bandwidth())
+        .attr("height", function(d) { return height - yScale(provinceData[d]); });
+
+    // Add axes
+    var xAxis = d3.axisBottom(xScale);
+    var yAxis = d3.axisLeft(yScale);
+
+    svg.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(xAxis);
+
+    svg.append("g")
+        .attr("class", "y axis")
+        .call(yAxis);
+}
+
 
 function swapData() {
     if (currentDataType === "Arrival IDPs") {
