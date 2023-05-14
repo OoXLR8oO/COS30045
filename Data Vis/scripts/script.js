@@ -127,8 +127,6 @@ function mapVisualization(idpType) {
                 colorScale.range(d3.schemeReds[6]);
             }
 
-
-
             // Join the TopoJSON features with the data
             var provinces = topojson.feature(topology, topology.objects.AFGADM2gbOpen).features;
             provinces.forEach(function (d) {
@@ -137,7 +135,7 @@ function mapVisualization(idpType) {
                     d.properties.idps = provinceData[idpType];
                 }
             });
-
+            
             // Draw the map
             svg.selectAll("path")
                 .data(provinces)
@@ -156,7 +154,7 @@ function mapVisualization(idpType) {
                 })
                 .on("click", function (event, d) {
                     // Draw the bar chart for the selected province
-                    updateChart(d.properties.shapeName);
+                    updateChart(d.properties.shapeName, document.getElementById("year").value);
                 })
                 .on("mouseout", function () {
                     // Hide tooltip on mouseout
@@ -167,26 +165,49 @@ function mapVisualization(idpType) {
     });
 }
 
-function updateChart(provinceName) {
-    
+function updateChart(provinceName, selectedYear) {
+    console.log('Update chart for:', provinceName, selectedYear);
     d3.csv("idp_19_22.csv").then(function (data) {
-        const filteredData = data.find((row) => row.ADM1NameEnglish === provinceName);
-        console.log(row.ADM1NameEnglish);
-        if (filteredData) {
+        const filteredData = data.filter((row) => row.ADM1NameEnglish === provinceName);
+        console.log('Filtered data:', filteredData);
+        if (filteredData.length > 0) {
+            window.alert(filteredData.length);
+            let totalArrivalIDPs = 0;
+            let totalFledIDPs = 0;
+
+            //debugging. No results added to totalArrivalIDPs & totalFledIDPs
+            filteredData.forEach((row) => {
+                const arrivalKey = `ArrivalIDPs${selectedYear}`;
+                const fledKey = `FledIDPs${selectedYear}`;
             
-    
+                console.log('Arrival Key:', arrivalKey, 'Value:', row[arrivalKey]);
+                console.log('Fled Key:', fledKey, 'Value:', row[fledKey]);
+            
+                totalArrivalIDPs += +row[arrivalKey];
+                totalFledIDPs += +row[fledKey];
+            
+                console.log('Total Arrival IDPs:', totalArrivalIDPs);
+                console.log('Total Fled IDPs:', totalFledIDPs);
+            });
+            
+            window.alert(totalArrivalIDPs.length);
+            window.alert(totalFledIDPs.length);
             const provinceData = {
-                "Arrival IDPs": +filteredData[`ArrivalIDPs${year}`],
-                "Fled IDPs": +filteredData[`FledIDPs${year}`],
+                "Arrival IDPs": totalArrivalIDPs,
+                "Fled IDPs": totalFledIDPs,
             };
-            console.log(+provinceData["Arrival IDPs"]);
-            console.log(+provinceData["Fled IDPs"]);
-            drawBarChart(provinceData, provinceName, year);
+            console.log('Province data:', provinceData);
+            
+            window.alert(provinceData.length);
+            drawBarChart(provinceData, provinceName, selectedYear);
         } else {
-            drawBarChart(null, provinceName, year);
+            drawBarChart(null, provinceName, selectedYear);
         }
     });
 }
+
+
+
 
 function drawBarChart(provinceData, provinceName, selectedYear) {
     // Remove any existing chart
@@ -300,17 +321,19 @@ let currentDataType = "Arrival IDPs";
 window.addEventListener("DOMContentLoaded", function () {
     window.onload = init;
 
-    document.getElementById("year").addEventListener("change", function () {
-        var selectedYear = this.value;
-        var provinceName = currentProvince;
-        drawBarChart(provinceName, selectedYear);
-    });
-    
-
     d3.csv("idp_19_22.csv").then(function (data) {
         csvData = data;
         var initialYear = document.getElementById("year").value;
-        var provinceName = currentProvince; 
-        drawBarChart(provinceName, initialYear);
+        var provinceName = currentProvince;
+        updateChart(provinceName, initialYear); // Call updateChart instead of drawBarChart directly
     });
 });
+
+
+document.getElementById("year").addEventListener("change", function () {
+    var selectedYear = this.value;
+    var provinceName = currentProvince;
+    updateChart(provinceName, selectedYear);  // Call updateChart instead of drawBarChart directly
+});
+    
+    
