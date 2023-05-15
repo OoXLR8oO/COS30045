@@ -2,7 +2,6 @@ function init() {
     // Event listener for the button
     d3.select("#toggleButton").on("click", onButtonClick);
 
-    //barChart();
     mapVisualization(currentDataType);
     heatMap();
 
@@ -89,9 +88,6 @@ function heatMap() {
     });
 }
 
-
-
-
 function mapVisualization(idpType) {
     // Clear the chart before redrawing
     d3.select("#chart").html("");
@@ -171,11 +167,10 @@ function updateChart(provinceName, selectedYear) {
         const filteredData = data.filter((row) => row.ADM1NameEnglish === provinceName);
         console.log('Filtered data:', filteredData);
         if (filteredData.length > 0) {
-            window.alert(filteredData.length);
             let totalArrivalIDPs = 0;
             let totalFledIDPs = 0;
 
-            //debugging. No results added to totalArrivalIDPs & totalFledIDPs
+
             filteredData.forEach((row) => {
                 const arrivalKey = `ArrivalIDPs${selectedYear}`;
                 const fledKey = `FledIDPs${selectedYear}`;
@@ -190,26 +185,20 @@ function updateChart(provinceName, selectedYear) {
                 console.log('Total Fled IDPs:', totalFledIDPs);
             });
             
-            window.alert(totalArrivalIDPs.length);
-            window.alert(totalFledIDPs.length);
             const provinceData = {
                 "Arrival IDPs": totalArrivalIDPs,
                 "Fled IDPs": totalFledIDPs,
             };
             console.log('Province data:', provinceData);
             
-            window.alert(provinceData.length);
-            drawBarChart(provinceData, provinceName, selectedYear);
+            drawBarChart(provinceData, provinceName);
         } else {
-            drawBarChart(null, provinceName, selectedYear);
+            drawBarChart(null, provinceName);
         }
     });
 }
 
-
-
-
-function drawBarChart(provinceData, provinceName, selectedYear) {
+function drawBarChart(provinceData, provinceName) {
     // Remove any existing chart
     d3.select("#barchart").html("");
 
@@ -237,6 +226,7 @@ function drawBarChart(provinceData, provinceName, selectedYear) {
             .text("No available data.");
         return;
     }
+
     // Add heading with province name
     svg.append("text")
         .attr("x", width / 2)
@@ -253,18 +243,18 @@ function drawBarChart(provinceData, provinceName, selectedYear) {
         .padding(0.3);
 
     var yScale = d3.scaleLinear()
-        .domain([0, Math.max(+provinceData["Arrival IDPs"], +provinceData["Fled IDPs"])])
+        .domain([0, Math.max(provinceData["Arrival IDPs"], provinceData["Fled IDPs"])])
         .range([height, 0]);
-    
+
     // Draw the bars
     svg.selectAll(".bar")
         .data(["Arrival IDPs", "Fled IDPs"])
         .enter().append("rect")
         .attr("class", "bar")
         .attr("x", function (d) { return xScale(d); })
-        .attr("y", function (d) { return yScale(+provinceData[d + selectedYear]); })
+        .attr("y", function (d) { return yScale(provinceData[d]); })
         .attr("width", xScale.bandwidth())
-        .attr("height", function (d) { return height - yScale(+provinceData[d + selectedYear]); })
+        .attr("height", function (d) { return height - yScale(provinceData[d]); })
         .attr("fill", function (d) {
             if (d === "Arrival IDPs") {
                 return "green";
@@ -272,7 +262,6 @@ function drawBarChart(provinceData, provinceName, selectedYear) {
                 return "red";
             }
         });
-
 
     // Add axis
     var xAxis = d3.axisBottom(xScale);
@@ -288,7 +277,6 @@ function drawBarChart(provinceData, provinceName, selectedYear) {
         .call(yAxis);
 }
 
-
 function swapData() {
     if (currentDataType === "Arrival IDPs") {
         currentDataType = "Fled IDPs";
@@ -300,7 +288,6 @@ function swapData() {
     mapVisualization(currentDataType);
 }
 
-// Button click event handler
 function onButtonClick() {
     var button = d3.select("#toggleButton");
     var currentText = button.text();
@@ -312,7 +299,6 @@ function onButtonClick() {
         button.text("Show Fled IDPs");
     }
 }
-
 
 let csvData;
 let currentProvince = "Kabul";
@@ -330,9 +316,22 @@ window.addEventListener("DOMContentLoaded", function () {
 });
 
 
+// Get the dropdown select element
+var selectElement = document.getElementById("year");
+
+// Add an event listener for the change event
+selectElement.addEventListener("change", function(event) {
+    var selectedYear = this.value;
+    var provinceName = currentProvince;
+    window.alert("hello");
+    updateChart(provinceName, selectedYear);
+});
+
+
 document.getElementById("year").addEventListener("change", function () {
     var selectedYear = this.value;
     var provinceName = currentProvince;
+    window.alert("hello");
     updateChart(provinceName, selectedYear);  // Call updateChart instead of drawBarChart directly
 });
     
