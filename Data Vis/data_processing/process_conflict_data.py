@@ -16,7 +16,7 @@ conflict_data['Month'] = pd.to_datetime(conflict_data['Month'], format='%B').dt.
 conflict_data['Date'] = pd.to_datetime(conflict_data[['Year', 'Month']].assign(day=1))
 
 # Keep only the 'Date' and 'Fatalities' columns
-conflict_data = conflict_data[['Date', 'Fatalities']]
+conflict_data = conflict_data[['Date', 'Fatalities', 'Events']]
 
 # Save the preprocessed conflict event dataset
 conflict_data.to_csv('preprocessed_conflict_data.csv', index=False)

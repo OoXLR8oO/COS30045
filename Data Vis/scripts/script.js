@@ -1,11 +1,15 @@
 function init() {
     // Event listener for the button
-    d3.select("#toggleButton").on("click", onButtonClick);
+    d3.select("#toggleButton").on("click", onIDPButtonClick);
+
+    d3.select("#year").on("change", function(event) {
+        var selectedYear = this.value;
+        var provinceName = currentProvince;
+        updateBarChart(provinceName, selectedYear);
+    });
 
     mapVisualization(currentDataType);
     heatMap();
-
-
 }
 
 function heatMap() {
@@ -13,6 +17,9 @@ function heatMap() {
     const margin = { top: 50, right: 50, bottom: 50, left: 50 };
     const width = 600 - margin.left - margin.right;
     const height = 400 - margin.top - margin.bottom;
+    const info = d3.select("#heatInfo");
+    const legendWidth = 300;
+    const legendHeight = 20;
 
     const tooltip = d3.select("#tooltip3")
         .style("opacity", 0);
@@ -21,7 +28,7 @@ function heatMap() {
     const svg = d3.select("#heatmap")
         .append("svg")
         .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
+        .attr("height", height + margin.top + margin.bottom + 100) 
         .append("g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
@@ -35,18 +42,21 @@ function heatMap() {
         .padding(0.1);
 
     const colorScale = d3.scaleSequential()
-        .interpolator(d3.interpolateBlues);
+        .interpolator(d3.interpolateReds);
 
     // Load the data
     d3.csv("preprocessed_conflict_data.csv", d => ({
         date: new Date(d.Date),
-        fatalities: +d.Fatalities
+        events: isNaN(+d.Events) ? 0 : +d.Events,
+        fatalities: isNaN(+d.Fatalities) ? 0 : +d.Fatalities
+        
     })).then(data => {
         // Set the domains of the scales
         xScale.domain(data.map(d => d.date.getMonth()));
         yScale.domain(data.map(d => d.date.getFullYear()));
-
-        colorScale.domain([0, d3.max(data, d => d.fatalities)]);
+        
+        const maxFatalities = d3.max(data, d => d.fatalities);
+        colorScale.domain([0, maxFatalities]);
 
         // Draw the X axis
         svg.append("g")
@@ -70,98 +80,198 @@ function heatMap() {
             .attr("width", xScale.bandwidth())
             .attr("height", yScale.bandwidth())
             .style("fill", d => colorScale(d.fatalities))
-            .on("mouseover", function (d) {
-                // Show a tooltip when hovering over a cell
-                tooltip.transition()
-                    .duration(100)
-                    .style("opacity", 0.9);
-                tooltip.html(`Fatalities: ${d.fatalities}`)
-                    .style("left", `${d3.event.pageX + 10}px`)
-                    .style("top", `${d3.event.pageY - 30}px`);
+            .on("mouseover", function (event, d) {
+                // Show info in the info div when hovering over a cell
+                var dateFormat = d3.timeFormat("%m/%Y");
+                info.html(`
+                    <p>Date: ${dateFormat(d.date)}</p>
+                    <p>Fatalities: ${d.fatalities}</p>
+                    <p>Conflict Events: ${d.events}</p>
+                `);
             })
             .on("mouseout", function () {
-                // Hide the tooltip when no longer hovering over a cell
-                tooltip.transition()
-                    .duration(100)
-                    .style("opacity", 0);
+                // Clear the info div when no longer hovering over a cell
+                info.html("");
             });
+
+        // Draw the legend
+        const legend = svg.append("g")
+        .attr("transform", `translate(0,${height + 50})`);
+
+        const defs = svg.append("defs");
+        const linearGradient = defs.append("linearGradient")
+        .attr("id", "linear-gradient");
+
+        // Create an array of numbers from 0 to maxFatalities for the legend
+        const legendData = Array.from({length: maxFatalities + 1}, (_, i) => i);
+
+        legendData.forEach((d, i) => {
+            linearGradient.append("stop")
+            .attr("offset", `${100 * (i / legendData.length)}%`)
+            .attr("stop-color", colorScale(d));
+        });
+
+        legend.append("rect")
+        .attr("width", legendWidth)
+        .attr("height", legendHeight)
+        .style("fill", "url(#linear-gradient)");
+
+        // Legend scale
+        const legendScale = d3.scaleLinear()
+        .range([0, legendWidth])
+        .domain([0, maxFatalities]);
+
+        const legendAxis = d3.axisBottom()
+        .scale(legendScale)
+        .tickSize(10);
+
+        legend.call(legendAxis);
     });
 }
+
+
+  // .on("mouseover", function (event, d) {
+            //     // Show a tooltip when hovering over a cell
+            //     tooltip.transition()
+            //         .duration(100)
+            //         .style("opacity", 0.9);
+            //     const pointer = d3.pointer(event, window);
+            //     tooltip.html(`Fatalities: ${d.fatalities}<br>Conflict Events: ${d.events}`)
+            //         .style("left", `${pointer[0] + 10}px`)
+            //         .style("top", `${pointer[1] - 30}px`);
+            // })
+            // .on("mouseout", function () {
+            //     // Hide the tooltip when no longer hovering over a cell
+            //     tooltip.transition()
+            //         .duration(100)
+            //         .style("opacity", 0);
+            // });
 
 function mapVisualization(idpType) {
     // Clear the chart before redrawing
     d3.select("#chart").html("");
 
     // Set up the chart dimensions and margins
-    var margin = { top: 20, right: 20, bottom: 30, left: 40 },
-        width = 960 - margin.left - margin.right,
-        height = 500 - margin.top - margin.bottom;
+    const margin = { top: 20, right: 20, bottom: 70, left: 40 };
+    const width = 960 - margin.left - margin.right;
+    const height = 500 - margin.top - margin.bottom;
 
     // Create the main SVG element and a group (g) element inside it with the proper translation
-    var svg = d3.select("#chart")
+    const svg = d3.select("#chart")
         .append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
         .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        .attr("transform", `translate(${margin.left},${margin.top})`);
 
     // Load and process the data
     d3.csv("province_data.csv").then(function (data) {
+        const maxIDPs = d3.max(data, function (d) { return Math.max(d['Arrival IDPs'], d['Fled IDPs']); });
+
         // Load TopoJSON file
         d3.json("map/afghan.topojson").then(function (topology) {
             // Define the projection and path
-            var projection = d3.geoMercator().fitSize([width, height], topojson.feature(topology, topology.objects.AFGADM2gbOpen));
-            var path = d3.geoPath().projection(projection);
+            const projection = d3.geoMercator().fitSize([width, height], topojson.feature(topology, topology.objects.AFGADM2gbOpen));
+            const path = d3.geoPath().projection(projection);
 
             // Define the color scale
-            var colorScale = d3.scaleQuantize()
-                .domain([0, d3.max(data, function (d) { return Math.max(d['Arrival IDPs'], d['Fled IDPs']); })])
-            if (idpType == 'Arrival IDPs') {
-                colorScale.range(d3.schemeGreens[6]);
-            }
-            else {
-                colorScale.range(d3.schemeReds[6]);
+            const colorScale = d3.scaleQuantize()
+                .domain([0, maxIDPs]);
+            if (idpType === 'Arrival IDPs') {
+                colorScale.range(d3.schemeGreens[9]);
+            } else {
+                colorScale.range(d3.schemeReds[9]);
             }
 
             // Join the TopoJSON features with the data
-            var provinces = topojson.feature(topology, topology.objects.AFGADM2gbOpen).features;
+            const provinces = topojson.feature(topology, topology.objects.AFGADM2gbOpen).features;
             provinces.forEach(function (d) {
-                var provinceData = data.find(function (e) { return e.ADM1NameEnglish === d.properties.shapeName; });
+                const provinceData = data.find(function (e) { return e.ADM1NameEnglish === d.properties.shapeName; });
                 if (provinceData) {
                     d.properties.idps = provinceData[idpType];
                 }
             });
-            
+
             // Draw the map
             svg.selectAll("path")
                 .data(provinces)
                 .enter().append("path")
                 .attr("d", path)
-                .attr("fill", function (d) { return colorScale(d.properties.idps || 0); }) // Set color based on idps value
+                .attr("fill", function (d) { return colorScale(d.properties.idps || 0); }) // Set color based on IDPs value
                 .attr("stroke", "#333") // Add a border with a darker color
                 .attr("stroke-width", 0.5) // Adjust the border width
                 .on("mouseover", function (event, d) {
                     // Show tooltip on mouseover
                     d3.select("#tooltip1")
                         .style("opacity", 1)
-                        .html(d.properties.shapeName + "<br>IDPs: " + (d.properties.idps || 0))
-                        .style("left", (event.pageX + 10) + "px")
-                        .style("top", (event.pageY - 10) + "px");
+                        .html(`${d.properties.shapeName}<br>IDPs: ${d.properties.idps || 0}`)
+                        .style("left", `${event.pageX + 10}px`)
+                        .style("top", `${event.pageY - 10}px`);
                 })
                 .on("click", function (event, d) {
                     // Draw the bar chart for the selected province
-                    updateChart(d.properties.shapeName, document.getElementById("year").value);
+                    currentProvince = d.properties.shapeName;
+                    updateBarChart(d.properties.shapeName, document.getElementById("year").value);
                 })
                 .on("mouseout", function () {
                     // Hide tooltip on mouseout
                     d3.select("#tooltip1")
                         .style("opacity", 0);
                 });
+
+            // Draw the legend
+            const legendWidth = 300;
+            const legendHeight = 20;
+            const legendX = width - legendWidth - 10;
+            const legendY = height + margin.bottom - legendHeight;
+
+            const legend = svg.append("g")
+                .attr("transform", `translate(${legendX}, ${legendY})`);
+
+            const defs = svg.append("defs");
+            const linearGradient = defs.append("linearGradient")
+                .attr("id", "linear-gradient");
+
+            const legendData = Array.from({ length: 10 }, (_, i) => maxIDPs * (i / 10));
+            legendData.forEach((d, i) => {
+                linearGradient.append("stop")
+                    .attr("offset", `${100 * (i / (legendData.length - 1))}%`)
+                    .attr("stop-color", colorScale(d));
+            });
+
+            legend.append("rect")
+                .attr("width", legendWidth)
+                .attr("height", legendHeight)
+                .style("fill", "url(#linear-gradient)");
+
+            const legendScale = d3.scaleLinear()
+                .range([0, legendWidth])
+                .domain([0, maxIDPs]);
+
+            const legendAxis = d3.axisBottom(legendScale)
+                .tickSize(10)
+                .ticks(5)
+                .tickFormat(d3.format(".0f"));
+
+            legend.append("g")
+                .attr("class", "axis")
+                .attr("transform", `translate(0, ${legendHeight})`)
+                .call(legendAxis);
+
+
+
+
+
+
+
+
+                
         });
     });
 }
+            
 
-function updateChart(provinceName, selectedYear) {
+function updateBarChart(provinceName, selectedYear) {
     console.log('Update chart for:', provinceName, selectedYear);
     d3.csv("idp_19_22.csv").then(function (data) {
         const filteredData = data.filter((row) => row.ADM1NameEnglish === provinceName);
@@ -191,21 +301,21 @@ function updateChart(provinceName, selectedYear) {
             };
             console.log('Province data:', provinceData);
             
-            drawBarChart(provinceData, provinceName);
+            drawBarChart(provinceData, provinceName, selectedYear);
         } else {
-            drawBarChart(null, provinceName);
+            drawBarChart(null, provinceName, selectedYear);
         }
     });
 }
 
-function drawBarChart(provinceData, provinceName) {
+function drawBarChart(provinceData, provinceName, selectedYear) {
     // Remove any existing chart
     d3.select("#barchart").html("");
 
     // Set up the chart dimensions and margins
-    var margin = { top: 20, right: 20, bottom: 30, left: 40 },
-        width = 300 - margin.left - margin.right,
-        height = 200 - margin.top - margin.bottom;
+    var margin = { top: 30, right: 20, bottom: 30, left: 55 },
+        width = 500 - margin.left - margin.right,
+        height = 350 - margin.top - margin.bottom;
 
     // Create the SVG element and a group (g) element inside it with the proper translation
     var svg = d3.select("#barchart")
@@ -227,6 +337,7 @@ function drawBarChart(provinceData, provinceName) {
         return;
     }
 
+    var chartHeading = provinceName + " (" + selectedYear + ")";
     // Add heading with province name
     svg.append("text")
         .attr("x", width / 2)
@@ -234,7 +345,7 @@ function drawBarChart(provinceData, provinceName) {
         .attr("text-anchor", "middle")
         .attr("font-size", "16px")
         .attr("font-weight", "bold")
-        .text(provinceName);
+        .text(chartHeading);
 
     // Create scales for the bar chart
     var xScale = d3.scaleBand()
@@ -277,18 +388,8 @@ function drawBarChart(provinceData, provinceName) {
         .call(yAxis);
 }
 
-function swapData() {
-    if (currentDataType === "Arrival IDPs") {
-        currentDataType = "Fled IDPs";
-        document.getElementById("swapButton").innerText = "Swap to Arrival IDPs";
-    } else {
-        currentDataType = "Arrival IDPs";
-        document.getElementById("swapButton").innerText = "Swap to Fled IDPs";
-    }
-    mapVisualization(currentDataType);
-}
 
-function onButtonClick() {
+function onIDPButtonClick() {
     var button = d3.select("#toggleButton");
     var currentText = button.text();
     if (currentText === "Show Fled IDPs") {
@@ -311,28 +412,12 @@ window.addEventListener("DOMContentLoaded", function () {
         csvData = data;
         var initialYear = document.getElementById("year").value;
         var provinceName = currentProvince;
-        updateChart(provinceName, initialYear); // Call updateChart instead of drawBarChart directly
+        updateBarChart(provinceName, initialYear); // Call updateBarChart instead of drawBarChart directly
     });
 });
 
 
-// Get the dropdown select element
-var selectElement = document.getElementById("year");
-
-// Add an event listener for the change event
-selectElement.addEventListener("change", function(event) {
-    var selectedYear = this.value;
-    var provinceName = currentProvince;
-    window.alert("hello");
-    updateChart(provinceName, selectedYear);
-});
 
 
-document.getElementById("year").addEventListener("change", function () {
-    var selectedYear = this.value;
-    var provinceName = currentProvince;
-    window.alert("hello");
-    updateChart(provinceName, selectedYear);  // Call updateChart instead of drawBarChart directly
-});
-    
-    
+
+
