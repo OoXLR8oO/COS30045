@@ -2,7 +2,7 @@ function init() {
     // Event listener for the button
     d3.select("#toggleButton").on("click", onIDPButtonClick);
 
-    d3.select("#year").on("change", function(event) {
+    d3.select("#year").on("change", function (event) {
         var selectedYear = this.value;
         var provinceName = currentProvince;
         updateBarChart(provinceName, selectedYear);
@@ -28,7 +28,7 @@ function heatMap() {
     const svg = d3.select("#heatmap")
         .append("svg")
         .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom + 100) 
+        .attr("height", height + margin.top + margin.bottom + 100)
         .append("g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
@@ -49,12 +49,12 @@ function heatMap() {
         date: new Date(d.Date),
         events: isNaN(+d.Events) ? 0 : +d.Events,
         fatalities: isNaN(+d.Fatalities) ? 0 : +d.Fatalities
-        
+
     })).then(data => {
         // Set the domains of the scales
         xScale.domain(data.map(d => d.date.getMonth()));
         yScale.domain(data.map(d => d.date.getFullYear()));
-        
+
         const maxFatalities = d3.max(data, d => d.fatalities);
         colorScale.domain([0, maxFatalities]);
 
@@ -96,56 +96,56 @@ function heatMap() {
 
         // Draw the legend
         const legend = svg.append("g")
-        .attr("transform", `translate(0,${height + 50})`);
+            .attr("transform", `translate(0,${height + 50})`);
 
         const defs = svg.append("defs");
         const linearGradient = defs.append("linearGradient")
-        .attr("id", "linear-gradient");
+            .attr("id", "linear-gradient");
 
         // Create an array of numbers from 0 to maxFatalities for the legend
-        const legendData = Array.from({length: maxFatalities + 1}, (_, i) => i);
+        const legendData = Array.from({ length: maxFatalities + 1 }, (_, i) => i);
 
         legendData.forEach((d, i) => {
             linearGradient.append("stop")
-            .attr("offset", `${100 * (i / legendData.length)}%`)
-            .attr("stop-color", colorScale(d));
+                .attr("offset", `${100 * (i / legendData.length)}%`)
+                .attr("stop-color", colorScale(d));
         });
 
         legend.append("rect")
-        .attr("width", legendWidth)
-        .attr("height", legendHeight)
-        .style("fill", "url(#linear-gradient)");
+            .attr("width", legendWidth)
+            .attr("height", legendHeight)
+            .style("fill", "url(#linear-gradient)");
 
         // Legend scale
         const legendScale = d3.scaleLinear()
-        .range([0, legendWidth])
-        .domain([0, maxFatalities]);
+            .range([0, legendWidth])
+            .domain([0, maxFatalities]);
 
         const legendAxis = d3.axisBottom()
-        .scale(legendScale)
-        .tickSize(10);
+            .scale(legendScale)
+            .tickSize(10);
 
         legend.call(legendAxis);
     });
 }
 
 
-  // .on("mouseover", function (event, d) {
-            //     // Show a tooltip when hovering over a cell
-            //     tooltip.transition()
-            //         .duration(100)
-            //         .style("opacity", 0.9);
-            //     const pointer = d3.pointer(event, window);
-            //     tooltip.html(`Fatalities: ${d.fatalities}<br>Conflict Events: ${d.events}`)
-            //         .style("left", `${pointer[0] + 10}px`)
-            //         .style("top", `${pointer[1] - 30}px`);
-            // })
-            // .on("mouseout", function () {
-            //     // Hide the tooltip when no longer hovering over a cell
-            //     tooltip.transition()
-            //         .duration(100)
-            //         .style("opacity", 0);
-            // });
+// .on("mouseover", function (event, d) {
+//     // Show a tooltip when hovering over a cell
+//     tooltip.transition()
+//         .duration(100)
+//         .style("opacity", 0.9);
+//     const pointer = d3.pointer(event, window);
+//     tooltip.html(`Fatalities: ${d.fatalities}<br>Conflict Events: ${d.events}`)
+//         .style("left", `${pointer[0] + 10}px`)
+//         .style("top", `${pointer[1] - 30}px`);
+// })
+// .on("mouseout", function () {
+//     // Hide the tooltip when no longer hovering over a cell
+//     tooltip.transition()
+//         .duration(100)
+//         .style("opacity", 0);
+// });
 
 function mapVisualization(idpType) {
     // Clear the chart before redrawing
@@ -160,7 +160,7 @@ function mapVisualization(idpType) {
     const svg = d3.select("#chart")
         .append("svg")
         .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
+        .attr("height", height + margin.top + margin.bottom + 100)
         .append("g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
@@ -219,57 +219,51 @@ function mapVisualization(idpType) {
                         .style("opacity", 0);
                 });
 
-            // Draw the legend
-            const legendWidth = 300;
-            const legendHeight = 20;
-            const legendX = width - legendWidth - 10;
-            const legendY = height + margin.bottom - legendHeight;
+            // Draw the map chart legend
+            const mapLegendWidth = 300;
+            const mapLegendHeight = 20;
+            const mapLegendX = width - mapLegendWidth - 10;
+            const mapLegendY = height + margin.bottom - mapLegendHeight + 50; // Adjusted Y position to be below the chart
 
-            const legend = svg.append("g")
-                .attr("transform", `translate(${legendX}, ${legendY})`);
+            const mapLegend = svg.append("g")
+                .attr("transform", `translate(${mapLegendX}, ${mapLegendY})`);
 
-            const defs = svg.append("defs");
-            const linearGradient = defs.append("linearGradient")
-                .attr("id", "linear-gradient");
+            const mapDefs = svg.append("defs");
+            const mapLinearGradient = mapDefs.append("linearGradient")
+                .attr("id", "map-linear-gradient");
 
-            const legendData = Array.from({ length: 10 }, (_, i) => maxIDPs * (i / 10));
+            const numStops = 10; // Number of color stops in the legend
+            const legendData = Array.from({ length: numStops }, (_, i) => maxIDPs * (i / (numStops - 1)));
+
             legendData.forEach((d, i) => {
-                linearGradient.append("stop")
+                mapLinearGradient.append("stop")
                     .attr("offset", `${100 * (i / (legendData.length - 1))}%`)
                     .attr("stop-color", colorScale(d));
             });
 
-            legend.append("rect")
-                .attr("width", legendWidth)
-                .attr("height", legendHeight)
-                .style("fill", "url(#linear-gradient)");
+            mapLegend.append("rect")
+                .attr("width", mapLegendWidth)
+                .attr("height", mapLegendHeight)
+                .style("fill", "url(#map-linear-gradient)");
 
             const legendScale = d3.scaleLinear()
-                .range([0, legendWidth])
+                .range([0, mapLegendWidth])
                 .domain([0, maxIDPs]);
 
             const legendAxis = d3.axisBottom(legendScale)
-                .tickSize(10)
                 .ticks(5)
+                .tickSize(10)
                 .tickFormat(d3.format(".0f"));
 
-            legend.append("g")
+            mapLegend.append("g")
                 .attr("class", "axis")
-                .attr("transform", `translate(0, ${legendHeight})`)
+                .attr("transform", `translate(0, ${mapLegendHeight})`)
                 .call(legendAxis);
 
-
-
-
-
-
-
-
-                
         });
     });
 }
-            
+
 
 function updateBarChart(provinceName, selectedYear) {
     console.log('Update chart for:', provinceName, selectedYear);
@@ -284,23 +278,23 @@ function updateBarChart(provinceName, selectedYear) {
             filteredData.forEach((row) => {
                 const arrivalKey = `ArrivalIDPs${selectedYear}`;
                 const fledKey = `FledIDPs${selectedYear}`;
-            
+                
                 console.log('Arrival Key:', arrivalKey, 'Value:', row[arrivalKey]);
                 console.log('Fled Key:', fledKey, 'Value:', row[fledKey]);
-            
-                totalArrivalIDPs += +row[arrivalKey];
-                totalFledIDPs += +row[fledKey];
-            
-                console.log('Total Arrival IDPs:', totalArrivalIDPs);
+
+                totalArrivalIDPs += isNaN(+row[arrivalKey]) ? 0 : +row[arrivalKey];
+                totalFledIDPs += isNaN(+row[fledKey]) ? 0 : +row[fledKey];
+
+                console.log('Total Arrival IDPs:', totalArrivalIDPs); 
                 console.log('Total Fled IDPs:', totalFledIDPs);
             });
-            
+
             const provinceData = {
                 "Arrival IDPs": totalArrivalIDPs,
                 "Fled IDPs": totalFledIDPs,
             };
             console.log('Province data:', provinceData);
-            
+
             drawBarChart(provinceData, provinceName, selectedYear);
         } else {
             drawBarChart(null, provinceName, selectedYear);
