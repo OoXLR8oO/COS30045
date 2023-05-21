@@ -1,3 +1,6 @@
+// The init function is called to initialize the visualizations.
+// It sets up the event listeners for the button and the year selection, 
+// and calls the functions to display the initial map and heatmap visualizations.
 function init() {
     // Event listener for the button
     d3.select("#toggleButton").on("click", onIDPButtonClick);
@@ -12,6 +15,8 @@ function init() {
     heatMap();
 }
 
+// The heatMap function creates a heatmap visualization of the conflict data.
+// It reads the preprocessed conflict data from a CSV file and visualizes it as a heatmap.
 function heatMap() {
     // Set up the chart dimensions
     const margin = { top: 50, right: 50, bottom: 50, left: 50 };
@@ -130,23 +135,9 @@ function heatMap() {
 }
 
 
-// .on("mouseover", function (event, d) {
-//     // Show a tooltip when hovering over a cell
-//     tooltip.transition()
-//         .duration(100)
-//         .style("opacity", 0.9);
-//     const pointer = d3.pointer(event, window);
-//     tooltip.html(`Fatalities: ${d.fatalities}<br>Conflict Events: ${d.events}`)
-//         .style("left", `${pointer[0] + 10}px`)
-//         .style("top", `${pointer[1] - 30}px`);
-// })
-// .on("mouseout", function () {
-//     // Hide the tooltip when no longer hovering over a cell
-//     tooltip.transition()
-//         .duration(100)
-//         .style("opacity", 0);
-// });
-
+// The mapVisualization function creates a map visualization of the IDP data.
+// It reads the IDP data and the TopoJSON file for the map, 
+// and visualizes the data on the map with different colors for different IDP types.
 function mapVisualization(idpType) {
     // Clear the chart before redrawing
     d3.select("#chart").html("");
@@ -264,7 +255,8 @@ function mapVisualization(idpType) {
     });
 }
 
-
+// The updateBarChart function updates the bar chart for the selected province and year.
+// It reads the IDP data, filters it for the selected province, and updates the bar chart.
 function updateBarChart(provinceName, selectedYear) {
     console.log('Update chart for:', provinceName, selectedYear);
     d3.csv("idp_19_22.csv").then(function (data) {
@@ -278,15 +270,9 @@ function updateBarChart(provinceName, selectedYear) {
             filteredData.forEach((row) => {
                 const arrivalKey = `ArrivalIDPs${selectedYear}`;
                 const fledKey = `FledIDPs${selectedYear}`;
-                
-                console.log('Arrival Key:', arrivalKey, 'Value:', row[arrivalKey]);
-                console.log('Fled Key:', fledKey, 'Value:', row[fledKey]);
 
                 totalArrivalIDPs += isNaN(+row[arrivalKey]) ? 0 : +row[arrivalKey];
                 totalFledIDPs += isNaN(+row[fledKey]) ? 0 : +row[fledKey];
-
-                console.log('Total Arrival IDPs:', totalArrivalIDPs); 
-                console.log('Total Fled IDPs:', totalFledIDPs);
             });
 
             const provinceData = {
@@ -302,6 +288,8 @@ function updateBarChart(provinceName, selectedYear) {
     });
 }
 
+// The drawBarChart function draws a bar chart for the selected province and year.
+// It receives the IDP data for the selected province and year, and creates the bar chart.
 function drawBarChart(provinceData, provinceName, selectedYear) {
     // Remove any existing chart
     d3.select("#barchart").html("");
