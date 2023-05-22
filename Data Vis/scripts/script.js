@@ -143,7 +143,7 @@ function mapVisualization(idpType) {
     d3.select("#chart").html("");
 
     // Set up the chart dimensions and margins
-    const margin = { top: 20, right: 20, bottom: 70, left: 40 };
+    const margin = { top: 30, right: 190, bottom: 0, left: 0 };
     const width = 960 - margin.left - margin.right;
     const height = 500 - margin.top - margin.bottom;
 
@@ -213,7 +213,7 @@ function mapVisualization(idpType) {
             // Draw the map chart legend
             const mapLegendWidth = 500;
             const mapLegendHeight = 20;
-            const mapLegendX = width - mapLegendWidth - 250;
+            const mapLegendX = width - mapLegendWidth - 200;
             const mapLegendY = height - mapLegendHeight + 50; // Adjusted Y position to be below the chart
 
             const mapLegend = svg.append("g")
