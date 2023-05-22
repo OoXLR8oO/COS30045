@@ -23,7 +23,7 @@ function heatMap() {
     const width = 600 - margin.left - margin.right;
     const height = 400 - margin.top - margin.bottom;
     const info = d3.select("#heatInfo");
-    const legendWidth = 300;
+    const legendWidth = 500;
     const legendHeight = 20;
 
     const tooltip = d3.select("#tooltip3")
@@ -211,10 +211,10 @@ function mapVisualization(idpType) {
                 });
 
             // Draw the map chart legend
-            const mapLegendWidth = 300;
+            const mapLegendWidth = 500;
             const mapLegendHeight = 20;
-            const mapLegendX = width - mapLegendWidth - 10;
-            const mapLegendY = height + margin.bottom - mapLegendHeight + 50; // Adjusted Y position to be below the chart
+            const mapLegendX = width - mapLegendWidth - 250;
+            const mapLegendY = height - mapLegendHeight + 50; // Adjusted Y position to be below the chart
 
             const mapLegend = svg.append("g")
                 .attr("transform", `translate(${mapLegendX}, ${mapLegendY})`);
