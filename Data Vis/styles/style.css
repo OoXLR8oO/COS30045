@@ -152,3 +152,6 @@ body {
     min-height: 120px; /* Adjust minimum height as needed */
 }
   
+#fatalities {
+    color: #ff0000;
+}
