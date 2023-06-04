@@ -35,7 +35,7 @@ function heatMap() {
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom + 100)
         .append("g")
-        .attr("transform", `translate(${margin.left},${marggin.top})`);
+        .attr("transform", `translate(${margin.left},${margin.top})`);
 
     // Define the scales
     const xScale = d3.scaleBand()
